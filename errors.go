@@ -1,6 +1,7 @@
 package errkit
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"runtime"
@@ -39,17 +40,26 @@ func (e *errkitError) Is(target error) bool {
 
 // New returns an error with the given message.
 func New(message string, details ...any) error {
+	fmt.Println("DBG ALKA CALLING NEW")
 	return newError(errors.New(message), 2, details...)
 }
 
 // Wrap returns a new errkitError that has the given message and err as the cause.
 func Wrap(err error, message string, details ...any) error {
+	fmt.Println("DBG ALKA CALLING wrap")
 	if err == nil {
 		return nil
 	}
 
 	e := newError(errors.New(message), 2, details...)
+
+	fmt.Printf("DBG ALKA WRAP AFETR NEWERROR %+v \n", e)
+	fmt.Printf("DBG ALKA WRAP cause NEWERROR %+v \n", err)
+
 	e.cause = err
+
+	fmt.Printf("DBG ALKA AFTER WRAPPIng err %+v , details %+v , stack %+v , callers %+v \n", e.error, e.cause, e.details, e.callers)
+
 	return e
 }
 
@@ -128,6 +138,25 @@ func (e *errkitError) Details() ErrorDetails {
 
 // Error returns a string representation of the error.
 func (e *errkitError) Error() string {
+	fmt.Println("DBG ALKA CALLING ERROR()")
+
+	details := e.Details()
+	fmt.Println("DBG ALKA PRINTING DETAILS", details)
+
+	if len(details) != 0 {
+		data, dataerr := json.Marshal(details)
+
+		fmt.Println("DBG ALKA dataerr ", dataerr)
+
+		fmt.Println("DBG ALKA PRINTING DATA", string(data))
+
+		fmt.Printf("DBG ALKA BEFORE CALLING WRAP %+v \n", e.error)
+
+		e.error = Wrap(e.error, string(data))
+	}
+
+	fmt.Printf("DBG ALKA UPDATING ERROR %+v  \n", e.error)
+
 	if e.cause == nil {
 		return e.error.Error()
 	}
