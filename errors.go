@@ -1,6 +1,7 @@
 package errkit
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"runtime"
@@ -128,6 +129,21 @@ func (e *errkitError) Details() ErrorDetails {
 
 // Error returns a string representation of the error.
 func (e *errkitError) Error() string {
+	details := e.Details()
+	if len(details) != 0 {
+		errcpy := &errkitError{}
+		data, _ := json.Marshal(details)
+		errcpy.error = Wrap(e.error, string(data))
+
+		fmt.Println("DBG ALKA EERCPY %+v", errcpy)
+
+		if errcpy.cause == nil {
+			return errcpy.error.Error()
+		}
+
+		return fmt.Sprintf("%s: %s", errcpy.error.Error(), errcpy.cause.Error())
+	}
+
 	if e.cause == nil {
 		return e.error.Error()
 	}
